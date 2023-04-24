@@ -5,7 +5,7 @@ on:
     paths:
       - 'contracts/**'
       - '.github/workflows/slither.yaml'
-      #- "**.py"
+      - "**.py"
   pull_request:
     branches: [ main ]
     paths:
