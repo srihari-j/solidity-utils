@@ -1,13 +1,13 @@
 name: Static Analysis
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
     paths:
       - 'contracts/**'
       - '.github/workflows/slither.yaml'
       - "**.py"
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
     paths:
       - 'contracts/**'
       - '.github/workflows/slither.yaml'
@@ -18,8 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.9]
-        node-version: [16.x]
+        python-version: [3.8, 3.9]
+        node-version: [14.x]
 
     steps:
       - uses: actions/checkout@v2
@@ -34,18 +34,40 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-
       - name: Install dependencies
         run: |
           sudo snap install solc
           python -m pip install --upgrade pip
-          pip install slither-analyzer==0.8.1 solc-select==0.2.1
-      - name: Analyze Contract
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Summary of static ananlysis
         run: |
-          slither contracts/GasChecker.sol --json report.json
-      - name: Save Artifacts
-        uses: actions/upload-artifact@v2
+          echo "Running slither"
+          slither . --print human-summary
+      - name: Contract summary of static ananlysis
+        run: |
+          echo "Running slither"
+          slither . --print contract-summary
+      - name: Function summary
+        run: |
+          slither . --print function-summary
+      - name: Data dependency
+        run: |
+          slither . --print data-dependency
+      - name: Inheritance
+        run: |
+          slither . --print inheritance
+      - name: Save the result as a SARIF json file
+            #  slither . --json - --sarif results.sarif
+        run: |
+            python report.py
+      - uses: github/codeql-action/upload-sarif@v1
         with:
-          name: Slither Report
-          path: |
-            report.json
+          # Path to SARIF file relative to the root of the repository
+          sarif_file: data/test.sarif
+
+      # - id: upload-file
+      #   uses: google-github-actions/upload-cloud-storage@main
+      #   with:
+      #     credentials: ${{ secrets.gcp_credentials }}
+      #     path: results.sarif
+      #     destination: ${{ secrets.BUCKET_NAME }}/security
