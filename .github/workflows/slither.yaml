@@ -1,66 +1,33 @@
-name: Static Analysis
+name: Slither Analysis
+
 on:
   push:
-    branches: [master]
-    paths:
-      - "contracts/**"
-      - ".github/workflows/slither.yaml"
-  pull_request:
-    branches: [master]
-    paths:
-      - "contracts/**"
+    branches:
+      - main
 
 jobs:
-  build:
+  analyze_contract:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.9]
-        node-version: [16.x]
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-      - run: yarn install
-      - run: yarn compile
+    - name: Checkout Code
+      uses: actions/checkout@v2
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-pip
+        pip3 install slither-analyzer
 
-      - name: Install dependencies
-        run: |
-          sudo snap install solc
-          python -m pip install --upgrade pip
-          pip install slither-analyzer==0.8.1 solc-select==0.2.1
-      - name: Summary of static ananlysis
-        run: |
-          slither . --print human-summary
-      - name: Contract summary of static ananlysis
-        run: |
-          slither . --print contract-summary
-      - name: Function summary
-        run: |
-          slither . --print function-summary
-      - name: Inheritance
-        run: |
-          slither . --print inheritance
-      - name: Data dependency
-        run: |
-          slither . --print data-dependency
-    - name: Upload report as artifact
-        run: |
-          uses: actions/upload-artifact@v2
-        with:
-            name: slither-report
-            path: /home/runner/work/solidity-utils/solidity-utils/build/contracts
+    - name: Analyze Contract
+      run: |
+        slither contracts/GasChecker.sol --json report.json
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v2
-        with:
-           name: slither-report
-           path: /home/runner/work/solidity-utils/solidity-utils/build/contracts
+    - name: Save Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: Slither Report
+        path: |
+          report.json
+
+    
