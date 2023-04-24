@@ -1,12 +1,20 @@
-name: Slither Analysis
-
+name: Static Analysis
 on:
   push:
-    branches:
-      - master
+    branches: [ master ]
+    paths:
+      - 'contracts/**'
+      - '.github/workflows/slither.yaml'
+      - "**.py"
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'contracts/**'
+      - '.github/workflows/slither.yaml'
 
 jobs:
   build:
+
     runs-on: ubuntu-latest
     strategy:
       matrix:
