@@ -32,14 +32,12 @@ jobs:
           sudo snap install solc
           python -m pip install --upgrade pip
           pip install slither-analyzer==0.8.1 solc-select==0.2.1
-
-    - name: Analyze Contract
-      run: |
-        slither contracts/GasChecker.sol --json report.json
-
-    - name: Save Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: Slither Report
-        path: |
-          report.json
+      - name: Analyze Contract
+        run: |
+          slither contracts/GasChecker.sol --json report.json
+      - name: Save Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: Slither Report
+          path: |
+            report.json
