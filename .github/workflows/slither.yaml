@@ -1,13 +1,13 @@
 name: Static Analysis
 on:
   push:
-    branches: [ main ]
+    branches: [ mmaster ]
     paths:
       - 'contracts/**'
       - '.github/workflows/slither.yaml'
       - "**.py"
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
     paths:
       - 'contracts/**'
       - '.github/workflows/slither.yaml'
