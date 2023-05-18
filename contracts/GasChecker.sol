@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.18.0;
 
 contract GasChecker {
     error GasCostDiffers(uint256 expected, uint256 actual);
