@@ -23,6 +23,25 @@ library SafeERC20 {
     bytes4 private constant _PERMIT_LENGTH_ERROR = 0x68275857;  // SafePermitBadLength.selector
     uint256 private constant _RAW_CALL_GAS_LIMIT = 5000;
 
+    function safeBalanceOf(
+        IERC20 token,
+        address account
+    ) internal view returns(uint256 tokenBalance) {
+        bytes4 selector = IERC20.balanceOf.selector;
+        assembly ("memory-safe") { // solhint-disable-line no-inline-assembly
+            mstore(0x00, selector)
+            mstore(0x04, account)
+            let success := staticcall(gas(), token, 0x00, 0x24, 0x00, 0x20)
+            tokenBalance := mload(0)
+
+            if or(iszero(success), lt(returndatasize(), 0x20)) {
+                let ptr := mload(0x40)
+                returndatacopy(ptr, 0, returndatasize())
+                revert(ptr, returndatasize())
+            }
+        }
+    }
+
     /// @dev Ensures method do not revert or return boolean `true`, admits call to non-smart-contract.
     function safeTransferFromUniversal(
         IERC20 token,
@@ -32,8 +51,7 @@ library SafeERC20 {
         bool permit2
     ) internal {
         if (permit2) {
-            if (amount > type(uint160).max) revert Permit2TransferAmountTooHigh();
-            safeTransferFromPermit2(token, from, to, uint160(amount));
+            safeTransferFromPermit2(token, from, to, amount);
         } else {
             safeTransferFrom(token, from, to, amount);
         }
@@ -74,8 +92,9 @@ library SafeERC20 {
         IERC20 token,
         address from,
         address to,
-        uint160 amount
+        uint256 amount
     ) internal {
+        if (amount > type(uint160).max) revert Permit2TransferAmountTooHigh();
         bytes4 selector = IPermit2.transferFrom.selector;
         bool success;
         assembly ("memory-safe") { // solhint-disable-line no-inline-assembly
@@ -287,8 +306,9 @@ library SafeERC20 {
             mstore(0, selector)
             mstore(4, amount)
             if iszero(call(gas(), weth, 0, 0, 0x24, 0, 0)) {
-                returndatacopy(0, 0, returndatasize())
-                revert(0, returndatasize())
+                let ptr := mload(0x40)
+                returndatacopy(ptr, 0, returndatasize())
+                revert(ptr, returndatasize())
             }
         }
     }
@@ -298,8 +318,9 @@ library SafeERC20 {
         if (to != address(this)) {
             assembly ("memory-safe") {  // solhint-disable-line no-inline-assembly
                 if iszero(call(_RAW_CALL_GAS_LIMIT, to, amount, 0, 0, 0, 0)) {
-                    returndatacopy(0, 0, returndatasize())
-                    revert(0, returndatasize())
+                    let ptr := mload(0x40)
+                    returndatacopy(ptr, 0, returndatasize())
+                    revert(ptr, returndatasize())
                 }
             }
         }
